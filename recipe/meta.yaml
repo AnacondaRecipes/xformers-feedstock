@@ -1,7 +1,9 @@
 context:
-  name: xformers
-  version: "0.0.29.post1"
-  build_number: 0
+  {% set name = "xformers" %}
+  {% set version = "0.0.29.post1" %}
+  #name: xformers
+  #version: "0.0.29.post1"
+  #build_number: 0
   cuda_version: ${{ env.get("CONDA_OVERRIDE_CUDA", default="None")}}
   cuda: ${{ "true" if cuda_version != "None" else "false" }}
   cuda_build_string: cuda_${{ cuda_version | version_to_buildstring }}
@@ -22,7 +24,8 @@ source:
     file_name: third_party/flash-attention/LICENSE
 
 build:
-  number: ${{ build_number }}
+  number: 0
+  #number: ${{ build_number }}
   skip:
     - win
   string: ${{ string_prefix }}py${{ python | version_to_buildstring }}h${{ hash }}_${{ build_number }}
