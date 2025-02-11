@@ -132,6 +132,11 @@ about:
   homepage: https://facebookresearch.github.io/xformers/
 
 extra:
+  anaconda-services:
+    ref: https://anaconda.zendesk.com/agent/tickets/49522
+    reason: Dependency for vllm
+  recipe-maintainers:
+    - ianaobi
   recipe-maintainers:
     - jan-janssen
     - h-vetinari
