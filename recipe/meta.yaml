@@ -60,7 +60,7 @@ requirements:
             - libcusparse-dev
 
     - ${{ compiler('cxx') }}
-    - ${{ stdlib('c') }}
+   # - ${{ stdlib('c') }}
     - git
 
     - if: cuda == "true"
