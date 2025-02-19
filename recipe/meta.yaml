@@ -25,7 +25,8 @@ build:
   number: 0
   skip: True # [win]
   script_env:
-    - cuda_compiler_version={{ cuda_version | default('None') }}
+    #- cuda_compiler_version={{ cuda_version | default('None') }}
+    - cuda_compiler_version="None"
     - package_version={{ version }}
 
 requirements:

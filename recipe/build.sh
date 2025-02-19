@@ -9,7 +9,7 @@ if [[ ${cuda_compiler_version} != "None" ]]; then
     elif [[ ${cuda_compiler_version} == 12.6 ]]; then
         export TORCH_CUDA_ARCH_LIST="5.3;6.0;6.1;7.0;7.5;8.0;8.6;8.9;9.0+PTX"
     else
-        echo "Unsupported CUDA compiler version. Edit build.sh to add target CUDA archs."
+        echo "Unsupported CUDA compiler version: ${cuda_compiler_version}. Edit build.sh to add target CUDA archs."
         exit 1
     fi
     export TORCH_NVCC_FLAGS="-Xfatbin -compress-all"
