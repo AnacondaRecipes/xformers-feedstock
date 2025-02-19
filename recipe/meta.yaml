@@ -24,6 +24,7 @@ source:
 
 build:
   number: 0
+  string: cpu_py{{ py }}h{{ hash }}_{{ build }}
   skip: True # [win]
   script_env:
     #- cuda_compiler_version={{ cuda_version | default('None') }}

@@ -3,6 +3,8 @@ set -ex
 # Target the same CUDA archs as conda-forge pytorch package
 # https://github.com/conda-forge/pytorch-cpu-feedstock/blob/main/recipe/build_pytorch.sh
 # Number of CUDA archs reduced to fit CI resources
+echo "Found cuda compiler version: ${cuda_compiler_version}"
+
 cuda_compiler_version="None"
 if [[ ${cuda_compiler_version} != "None" ]]; then
     if [[ ${cuda_compiler_version} == 11.8 ]]; then
