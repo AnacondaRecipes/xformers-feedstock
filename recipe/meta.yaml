@@ -8,11 +8,11 @@
 # ${{ cuda_build_string if cuda ==  "true" else "cpu_" }}
 
 package:
-  name: ${{ name|lower }}
-  version: ${{ version }}
+  name: {{ name|lower }}
+  version: {{ version }}
 
 source:
-  - url: https://pypi.io/packages/source/x/xformers/xformers-${{ version }}.tar.gz
+  - url: https://pypi.io/packages/source/x/xformers/xformers-{{ version }}.tar.gz
     sha256: d78c256e4c24ecc00f6f374d5b96afd0b56b3fb197f02d9efff4357fd5a399b4
   - url: https://raw.githubusercontent.com/NVIDIA/cutlass/main/LICENSE.txt
     sha256: 6fc6ad419e4d26571a14c7c4d26b65345865c20dd8686ddcf5e8673f54d3d233
@@ -25,8 +25,8 @@ build:
   number: 0
   skip: True # [win]
   script_env:
-    - cuda_compiler_version=${{ cuda_version | default('None') }}
-    - package_version=${{ version }}
+    - cuda_compiler_version={{ cuda_version | default('None') }}
+    - package_version={{ version }}
 
 requirements:
   build:
@@ -43,22 +43,22 @@ requirements:
     - libcusolver-dev
     - libcusparse-dev
 
-    - ${{ compiler('cxx') }}
-    - ${{ stdlib('c') }}
+    - {{ compiler('cxx') }}
+    - {{ stdlib('c') }}
     - git
 
-    - ${{ compiler('cuda') }}
-    - cuda-version ==${{ cuda_version }}
+    - {{ compiler('cuda') }}
+    - cuda-version =={{ cuda_version }}
 
   host:
     - wheel
     - python
     - pip
     - setuptools
-    - ${{ "pytorch * cuda*" }}
+    - {{ "pytorch * cuda*" }}
     - pytorch >=2.4
 
-    - cuda-version ==${{ cuda_version }}
+    - cuda-version =={{ cuda_version }}
 
     - cuda-driver-dev
     - cuda-cudart-dev
@@ -75,7 +75,7 @@ requirements:
     - python
     - numpy
     - pyre-extensions >=0.0.29
-    - ${{ "pytorch * cuda*" }}
+    - {{ "pytorch * cuda*" }}
 
   ignore_run_exports:
     # not identical to list of host deps; we do need cuda-cudart,
