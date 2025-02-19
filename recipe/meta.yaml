@@ -32,62 +32,65 @@ requirements:
   build:
     - python
     - pytorch >=2.4
-    - cuda-driver-dev
-    - cuda-cudart-dev
-    - cuda-nvrtc-dev
-    - cuda-nvtx-dev
-    - cuda-nvml-dev
-    - libcublas-dev
-    - libcufft-dev
-    - libcurand-dev
-    - libcusolver-dev
-    - libcusparse-dev
+
+    #- cuda-driver-dev
+    #- cuda-cudart-dev
+    #- cuda-nvrtc-dev
+    #- cuda-nvtx-dev
+    #- cuda-nvml-dev
+    #- libcublas-dev
+    #- libcufft-dev
+    #- libcurand-dev
+    #- libcusolver-dev
+    #- libcusparse-dev
 
     - {{ compiler('cxx') }}
     - git
 
-    - {{ compiler('cuda') }}
-    - cuda-version =={{ cuda_version }}
+    #- {{ compiler('cuda') }}
+    #- cuda-version =={{ cuda_version }}
 
   host:
     - wheel
     - python
     - pip
     - setuptools
-    - {{ "pytorch * cuda*" }}
+    - {{ "pytorch * cpu*" }}
     - pytorch >=2.4
 
-    - cuda-version =={{ cuda_version }}
+    #- cuda-version =={{ cuda_version }}
 
-    - cuda-driver-dev
-    - cuda-cudart-dev
-    - cuda-nvrtc-dev
-    - cuda-nvtx-dev
-    - cuda-nvml-dev
-    - libcublas-dev
-    - libcufft-dev
-    - libcurand-dev
-    - libcusolver-dev
-    - libcusparse-dev
+    #- cuda-driver-dev
+    #- cuda-cudart-dev
+    #- cuda-nvrtc-dev
+    #- cuda-nvtx-dev
+    #- cuda-nvml-dev
+    #- libcublas-dev
+    #- libcufft-dev
+    #- libcurand-dev
+    #- libcusolver-dev
+    #- libcusparse-dev
 
   run:
     - python
     - numpy
     - pyre-extensions >=0.0.29
-    - {{ "pytorch * cuda*" }}
+    - {{ "pytorch * cpu*" }}
 
   ignore_run_exports:
     # not identical to list of host deps; we do need cuda-cudart,
     # cuda-driver-dev & cuda-nvml-dev have no run-exports
-    - cuda-nvrtc-dev
-    - cuda-nvtx-dev
-    - libcublas-dev
-    - libcufft-dev
-    - libcurand-dev
-    - libcusolver-dev
-    - libcusparse-dev
+    #- cuda-nvrtc-dev
+    #- cuda-nvtx-dev
+    #- libcublas-dev
+    #- libcufft-dev
+    #- libcurand-dev
+    #- libcusolver-dev
+    #- libcusparse-dev
 
 test:
+  requires:
+    - pip
   imports:
     - xformers
   commands:
@@ -97,6 +100,7 @@ test:
 
 about:
   license: BSD-3-Clause AND Apache-2.0
+  license_family: BSD
   license_file:
     - LICENSE
     - third_party/cutlass/LICENSE.txt
@@ -109,6 +113,8 @@ about:
   doc_url: https://facebookresearch.github.io/xformers/
 
 extra:
+  skip-lints:
+    - host_section_needs_exact_pinnings
   anaconda-services:
     ref: https://anaconda.zendesk.com/agent/tickets/49522
     reason: Dependency for vllm
