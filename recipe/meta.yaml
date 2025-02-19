@@ -44,7 +44,6 @@ requirements:
     - libcusparse-dev
 
     - {{ compiler('cxx') }}
-    - {{ stdlib('c') }}
     - git
 
     - {{ compiler('cuda') }}
