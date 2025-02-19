@@ -1,5 +1,6 @@
 {% set name = "xformers" %}
 {% set version = "0.0.29.post1" %}
+{% set build = "0" %}
 #cuda_version: ${{ env.get("CONDA_OVERRIDE_CUDA", default="None")}}
 # {% set cuda_version = "12" %}
 # cuda: ${{ "true" if cuda_version != "None" else "false" }}
@@ -23,7 +24,7 @@ source:
     folder: third_party/flash-attention
 
 build:
-  number: 0
+  number: {{ build }}
   string: cpu_py{{ py }}h{{ PKG_HASH }}_{{ build }}
   skip: True # [win]
   script_env:
