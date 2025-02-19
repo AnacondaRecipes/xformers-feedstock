@@ -3,6 +3,7 @@ set -ex
 # Target the same CUDA archs as conda-forge pytorch package
 # https://github.com/conda-forge/pytorch-cpu-feedstock/blob/main/recipe/build_pytorch.sh
 # Number of CUDA archs reduced to fit CI resources
+cuda_compiler_version="None"
 if [[ ${cuda_compiler_version} != "None" ]]; then
     if [[ ${cuda_compiler_version} == 11.8 ]]; then
         export TORCH_CUDA_ARCH_LIST="5.3;6.0;6.1;7.0;7.5;8.0;8.6;8.9+PTX"

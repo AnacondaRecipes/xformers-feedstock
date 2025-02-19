@@ -1,10 +1,10 @@
 {% set name = "xformers" %}
 {% set version = "0.0.29.post1" %}
 #cuda_version: ${{ env.get("CONDA_OVERRIDE_CUDA", default="None")}}
-{% set cuda_version = "12" %}
+# {% set cuda_version = "12" %}
 # cuda: ${{ "true" if cuda_version != "None" else "false" }}
 #cuda_build_string: cuda_${{ cuda_version }}
-{% set cuda_build_string = "cuda_12" %}
+# {% set cuda_build_string = "cuda_12" %}
 # ${{ cuda_build_string if cuda ==  "true" else "cpu_" }}
 
 package:
