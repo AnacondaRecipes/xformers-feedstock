@@ -17,9 +17,10 @@ source:
   - url: https://raw.githubusercontent.com/NVIDIA/cutlass/main/LICENSE.txt
     sha256: 42fec630f410aa308f70a51a89fadcd19586fa620f9831a32bee528a9a10000e
     file_name: third_party/cutlass/LICENSE.txt
+    folder: third_party/cutlass
   - url: https://raw.githubusercontent.com/Dao-AILab/flash-attention/main/LICENSE
     sha256: 8c9ccb96c065e706135b6cbad279b721da6156e51f3a5f27c6b3329af9416d73
-    file_name: third_party/flash-attention/LICENSE
+    folder: third_party/flash-attention
 
 build:
   number: 0
