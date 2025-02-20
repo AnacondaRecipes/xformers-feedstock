@@ -1,0 +1,9 @@
+cuda_compiler:
+  - cuda-nvcc
+
+cuda_version: 
+  - 12
+
+cpu_or_cuda:
+  - cpu
+  - cuda
