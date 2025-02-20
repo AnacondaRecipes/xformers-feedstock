@@ -21,6 +21,7 @@ build:
   number: {{ build }}
   string: {{ cpu_or_cuda }}_py{{ py }}h{{ PKG_HASH }}_{{ build }}                    # [ cpu_or_cuda == "cpu" ]
   string: {{ cpu_or_cuda }}_{{ cuda_version }}_py{{ py }}h{{ PKG_HASH }}_{{ build }} # [ cpu_or_cuda == "cuda" ]
+  string: MISSING_ABS_{{ cuda_version }}_py{{ py }}h{{ PKG_HASH }}_{{ build }} # [ (not cpu_or_cuda == "cuda") and (not cpu_or_cuda == "cpu") ]
 
   # cuda requirements aren't available on osx or windows
   skip: True # [win or (osx-arm64 and cpu_or_cuda == "cuda")]
