@@ -8,7 +8,7 @@ echo "Found cuda compiler version: ${cuda_compiler_version}"
 if [[ ${cuda_compiler_version} != "None" ]]; then
     if [[ ${cuda_compiler_version} == 11.8 ]]; then
         export TORCH_CUDA_ARCH_LIST="5.3;6.0;6.1;7.0;7.5;8.0;8.6;8.9+PTX"
-    elif [[ ${cuda_compiler_version} == 12.6 ]]; then
+    elif [[ ${cuda_compiler_version} == 12.4 ]]; then
         export TORCH_CUDA_ARCH_LIST="5.3;6.0;6.1;7.0;7.5;8.0;8.6;8.9;9.0+PTX"
     else
         echo "Unsupported CUDA compiler version: ${cuda_compiler_version}. Edit build.sh to add target CUDA archs."

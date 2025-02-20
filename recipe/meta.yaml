@@ -2,9 +2,6 @@
 {% set version = "0.0.29.post1" %}
 {% set build = "0" %}
 
-# {% set cuda_build_string= cuda_{{ cuda_version }} %}
-# {% set cuda_build_string = "cpu_" %}  # [cpu_or_cuda == "cpu"]
-
 package:
   name: {{ name|lower }}
   version: {{ version }}
