@@ -5,7 +5,6 @@ set -ex
 # Number of CUDA archs reduced to fit CI resources
 echo "Found cuda compiler version: ${cuda_compiler_version}"
 
-cuda_compiler_version="None"
 if [[ ${cuda_compiler_version} != "None" ]]; then
     if [[ ${cuda_compiler_version} == 11.8 ]]; then
         export TORCH_CUDA_ARCH_LIST="5.3;6.0;6.1;7.0;7.5;8.0;8.6;8.9+PTX"

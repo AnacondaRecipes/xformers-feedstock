@@ -1,12 +1,9 @@
 {% set name = "xformers" %}
 {% set version = "0.0.29.post1" %}
 {% set build = "0" %}
-#cuda_version: ${{ env.get("CONDA_OVERRIDE_CUDA", default="None")}}
-# {% set cuda_version = "12" %}
-# cuda: ${{ "true" if cuda_version != "None" else "false" }}
-#cuda_build_string: cuda_${{ cuda_version }}
-# {% set cuda_build_string = "cuda_12" %}
-# ${{ cuda_build_string if cuda ==  "true" else "cpu_" }}
+
+# {% set cuda_build_string= cuda_{{ cuda_version }} %}
+# {% set cuda_build_string = "cpu_" %}  # [cpu_or_cuda == "cpu"]
 
 package:
   name: {{ name|lower }}
@@ -25,72 +22,80 @@ source:
 
 build:
   number: {{ build }}
-  string: cpu_py{{ py }}h{{ PKG_HASH }}_{{ build }}
-  skip: True # [win]
+  string: {{ cpu_or_cuda }}_py{{ py }}h{{ PKG_HASH }}_{{ build }}                    # [ cpu_or_cuda == "cpu" ]
+  string: {{ cpu_or_cuda }}_{{ cuda_version }}_py{{ py }}h{{ PKG_HASH }}_{{ build }} # [ cpu_or_cuda == "cuda" ]
+
+  # cuda requirements aren't available on osx or windows
+  skip: True # [win or (osx-arm64 and cpu_or_cuda == "cuda")]
   script_env:
-    #- cuda_compiler_version={{ cuda_version | default('None') }}
-    - cuda_compiler_version="None"
+    - cuda_compiler_version="None"                # [ cpu_or_cuda == "cpu"]
+    - cuda_compiler_version={{ cuda_version }}    # [ cpu_or_cuda == "cuda"]
     - package_version={{ version }}
 
 requirements:
   build:
     - python
+    - git
+    - {{ "pytorch * cpu*" }}  # [ cpu_or_cuda == "cpu" ]
+    - {{ "pytorch * gpu*" }} # [ cpu_or_cuda == "cuda" ]
     - pytorch >=2.4
 
-    #- cuda-driver-dev
-    #- cuda-cudart-dev
-    #- cuda-nvrtc-dev
-    #- cuda-nvtx-dev
-    #- cuda-nvml-dev
-    #- libcublas-dev
-    #- libcufft-dev
-    #- libcurand-dev
-    #- libcusolver-dev
-    #- libcusparse-dev
+    - cuda-driver-dev  # [ cpu_or_cuda == "cuda" ]
+    - cuda-cudart-dev  # [ cpu_or_cuda == "cuda" ]
+    - cuda-nvrtc-dev   # [ cpu_or_cuda == "cuda" ]
+    - cuda-nvtx-dev    # [ cpu_or_cuda == "cuda" ]
+    - cuda-nvml-dev    # [ cpu_or_cuda == "cuda" ]
+    - libcublas-dev    # [ cpu_or_cuda == "cuda" ]
+    - libcufft-dev     # [ cpu_or_cuda == "cuda" ]
+    - libcurand-dev    # [ cpu_or_cuda == "cuda" ]
+    - libcusolver-dev  # [ cpu_or_cuda == "cuda" ]
+    - libcusparse-dev  # [ cpu_or_cuda == "cuda" ]
+    - cuda-version =={{ cuda_version }} # [ cpu_or_cuda == "cuda" ]
 
     - {{ compiler('cxx') }}
-    - git
-
-    #- {{ compiler('cuda') }}
-    #- cuda-version =={{ cuda_version }}
+    - {{ compiler('cuda') }}            # [ cpu_or_cuda == "cuda" ] 
 
   host:
     - wheel
     - python
     - pip
     - setuptools
-    - {{ "pytorch * cpu*" }}
+    - {{ "pytorch * cpu*" }}  # [ cpu_or_cuda == "cpu" ]
+    - {{ "pytorch * gpu*" }} # [ cpu_or_cuda == "cuda" ]
     - pytorch >=2.4
 
-    #- cuda-version =={{ cuda_version }}
 
-    #- cuda-driver-dev
-    #- cuda-cudart-dev
-    #- cuda-nvrtc-dev
-    #- cuda-nvtx-dev
-    #- cuda-nvml-dev
-    #- libcublas-dev
-    #- libcufft-dev
-    #- libcurand-dev
-    #- libcusolver-dev
-    #- libcusparse-dev
+    - cuda-driver-dev  # [ cpu_or_cuda == "cuda" ]
+    - cuda-cudart-dev  # [ cpu_or_cuda == "cuda" ]
+    - cuda-nvrtc-dev   # [ cpu_or_cuda == "cuda" ]
+    - cuda-nvtx-dev    # [ cpu_or_cuda == "cuda" ]
+    - cuda-nvml-dev    # [ cpu_or_cuda == "cuda" ]
+    - libcublas-dev    # [ cpu_or_cuda == "cuda" ]
+    - libcufft-dev     # [ cpu_or_cuda == "cuda" ]
+    - libcurand-dev    # [ cpu_or_cuda == "cuda" ]
+    - libcusolver-dev  # [ cpu_or_cuda == "cuda" ]
+    - libcusparse-dev  # [ cpu_or_cuda == "cuda" ]
+    - cuda-version =={{ cuda_version }} # [ cpu_or_cuda == "cuda" ]
 
   run:
     - python
     - numpy
     - pyre-extensions >=0.0.29
-    - {{ "pytorch * cpu*" }}
+    - {{ "pytorch * cpu*" }}  # [ cpu_or_cuda == "cpu" ]
+    - {{ "pytorch * gpu*" }} # [ cpu_or_cuda == "cuda" ]
 
-  ignore_run_exports:
+  ignore_run_exports:  # [ cpu_or_cuda == "cuda" ]
     # not identical to list of host deps; we do need cuda-cudart,
     # cuda-driver-dev & cuda-nvml-dev have no run-exports
-    #- cuda-nvrtc-dev
-    #- cuda-nvtx-dev
-    #- libcublas-dev
-    #- libcufft-dev
-    #- libcurand-dev
-    #- libcusolver-dev
-    #- libcusparse-dev
+
+    - cuda-nvrtc-dev   # [ cpu_or_cuda == "cuda" ]
+    - cuda-nvtx-dev    # [ cpu_or_cuda == "cuda" ]
+    - libcublas-dev    # [ cpu_or_cuda == "cuda" ]
+    - libcufft-dev     # [ cpu_or_cuda == "cuda" ]
+    - libcurand-dev    # [ cpu_or_cuda == "cuda" ]
+    - libcusolver-dev  # [ cpu_or_cuda == "cuda" ]
+    - libcusparse-dev  # [ cpu_or_cuda == "cuda" ]
+
 
 test:
   requires:
