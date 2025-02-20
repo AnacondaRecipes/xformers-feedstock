@@ -35,7 +35,7 @@ requirements:
     - python
     - git
     - {{ "pytorch * cpu*" }}  # [ cpu_or_cuda == "cpu" ]
-    - {{ "pytorch * gpu*" }} # [ cpu_or_cuda == "cuda" ]
+    - {{ "pytorch * *cuda" }}{{ cuda_compiler_version }}*  # [ cpu_or_cuda == "cuda" ]
     - pytorch >=2.4
 
     - cuda-driver-dev  # [ cpu_or_cuda == "cuda" ]
