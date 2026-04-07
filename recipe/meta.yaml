@@ -1,0 +1,123 @@
+{% set name = "xformers" %}
+{% set version = "0.0.30" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  - url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+    sha256: a12bf3eb39e294cdbe8a7253ac9b665f41bac61d6d98df174e34ef7bdb6f2fc4
+  # Licenses for the third_party/* sources that ship in the sdist. The sdist includes
+  # the cutlass headers and flash-attention sources but omits their LICENSE files,
+  # so fetch them separately to satisfy license_file in about:.
+  - url: https://raw.githubusercontent.com/NVIDIA/cutlass/main/LICENSE.txt
+    sha256: 80a7a18b73d41f64dd9ca881af35938f8de88b18c728703251f4c94d1299884d
+    file_name: third_party/cutlass/LICENSE.txt
+    folder: third_party/cutlass
+  - url: https://raw.githubusercontent.com/Dao-AILab/flash-attention/main/LICENSE
+    sha256: 8c9ccb96c065e706135b6cbad279b721da6156e51f3a5f27c6b3329af9416d73
+    folder: third_party/flash-attention
+
+build:
+  number: 0
+  # Only supports Linux x86_64 for the CUDA variant (matches vllm's xformers pin:
+  # `xformers==0.0.30; platform_system == 'Linux' and platform_machine == 'x86_64'`).
+  # CPU variant is buildable on linux-64/linux-aarch64/osx-arm64. No Windows support.
+  # py3.13+ skipped until xformers upstream publishes CPython extension wheels.
+  skip: true  # [py<310 or py>312 or win or (cpu_or_cuda == "cuda" and not (linux and x86_64))]
+  string: cpu_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}   # [cpu_or_cuda == "cpu"]
+  string: cuda_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cpu_or_cuda == "cuda"]
+  script_env:
+    - cuda_compiler_version=None                   # [cpu_or_cuda == "cpu"]
+    - cuda_compiler_version={{ cuda_compiler_version }}  # [cpu_or_cuda == "cuda"]
+    - package_version={{ version }}
+  # CUDA *-dev packages have run_exports that would pin cuda-cudart/libcublas/etc.
+  # into xformers' run deps. pytorch's own run deps already bring in the runtime
+  # CUDA libraries, so we suppress the duplicate bounds here.
+  ignore_run_exports_from:                         # [cpu_or_cuda == "cuda"]
+    - cuda-nvrtc-dev                               # [cpu_or_cuda == "cuda"]
+    - cuda-nvtx-dev                                # [cpu_or_cuda == "cuda"]
+    - libcublas-dev                                # [cpu_or_cuda == "cuda"]
+    - libcufft-dev                                 # [cpu_or_cuda == "cuda"]
+    - libcurand-dev                                # [cpu_or_cuda == "cuda"]
+    - libcusolver-dev                              # [cpu_or_cuda == "cuda"]
+    - libcusparse-dev                              # [cpu_or_cuda == "cuda"]
+
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - {{ stdlib('c') }}
+    - {{ compiler('cuda') }}                       # [cpu_or_cuda == "cuda"]
+    - git
+
+  host:
+    - python
+    - pip
+    - setuptools
+    - wheel
+    # pytorch 2.7.0 on pkgs/main only has `cpu_openblas_*`, `cpu_mkl_*`, and
+    # `gpu_cuda128_*` build variants. Pin explicitly to match. Also note that
+    # Eric Dill's tip on vllm-feedstock#3 commit 62ba0d4d recommends pinning
+    # libtorch host-only with the BLAS sub-variant to avoid overlinking.
+    - pytorch 2.7.0=cpu_openblas*                  # [cpu_or_cuda == "cpu"]
+    - pytorch 2.7.0=gpu_cuda128*                   # [cpu_or_cuda == "cuda"]
+    - libtorch 2.7.0=cpu_openblas*                 # [cpu_or_cuda == "cpu"]
+    - libtorch 2.7.0=gpu_cuda128*                  # [cpu_or_cuda == "cuda"]
+    # CUDA development headers and libraries (linking only; runtime comes via pytorch).
+    - cuda-version =={{ cuda_compiler_version }}   # [cpu_or_cuda == "cuda"]
+    - cuda-driver-dev                              # [cpu_or_cuda == "cuda"]
+    - cuda-cudart-dev                              # [cpu_or_cuda == "cuda"]
+    - cuda-nvrtc-dev                               # [cpu_or_cuda == "cuda"]
+    - cuda-nvtx-dev                                # [cpu_or_cuda == "cuda"]
+    - cuda-nvml-dev                                # [cpu_or_cuda == "cuda"]
+    - libcublas-dev                                # [cpu_or_cuda == "cuda"]
+    - libcufft-dev                                 # [cpu_or_cuda == "cuda"]
+    - libcurand-dev                                # [cpu_or_cuda == "cuda"]
+    - libcusolver-dev                              # [cpu_or_cuda == "cuda"]
+    - libcusparse-dev                              # [cpu_or_cuda == "cuda"]
+
+  run:
+    # Upstream install_requires (xformers 0.0.30/requirements.txt):
+    #   torch >= 2.7
+    #   numpy
+    - python
+    - numpy
+    - pytorch 2.7.0=cpu_openblas*                  # [cpu_or_cuda == "cpu"]
+    - pytorch 2.7.0=gpu_cuda128*                   # [cpu_or_cuda == "cuda"]
+    # libtorch intentionally omitted from run — pytorch's run_exports pull it in
+    # with the correct ABI bound. Listing it here would cause overlinking.
+
+test:
+  requires:
+    - pip
+  imports:
+    - xformers
+    - xformers.ops
+  commands:
+    - pip check
+    - python -m xformers.info
+
+about:
+  home: https://github.com/facebookresearch/xformers
+  summary: "XFormers: A collection of composable Transformer building blocks."
+  description: |
+    xFormers is a PyTorch-based library which hosts flexible Transformer building
+    blocks. They are interoperable and optimized building blocks, which can be
+    optionally combined to create some state of the art models (e.g. MHA attention
+    mechanisms, sparsity-aware or long-context variants).
+  license: BSD-3-Clause AND Apache-2.0
+  license_family: BSD
+  license_file:
+    - LICENSE
+    - third_party/cutlass/LICENSE.txt
+    - third_party/flash-attention/LICENSE
+    - third_party/sputnik/LICENSE
+  doc_url: https://facebookresearch.github.io/xformers
+  dev_url: https://github.com/facebookresearch/xformers
+
+extra:
+  recipe-maintainers:
+    - jan-janssen
+    - h-vetinari
+    - bkreider

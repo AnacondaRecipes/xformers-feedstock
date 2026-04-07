@@ -1,0 +1,4 @@
+# CUDA variant compiles 10 GPU architectures (5.0;6.0;6.1;7.0;7.5;8.0;8.6;8.9;9.0;10.0+PTX)
+# against pytorch 2.7.0 gpu_cuda128 — needs an extended timeout to avoid being killed
+# at the default PBP build timeout. 12 hours matches the onnxruntime CUDA build budget.
+task_timeout: 43200  # 12 hours

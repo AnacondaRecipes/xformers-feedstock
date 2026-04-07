@@ -1,0 +1,9 @@
+cpu_or_cuda:
+  - cpu
+  - cuda
+
+# pytorch 2.7.0 on pkgs/main was built against CUDA 12.8 (`gpu_cuda128_*`).
+# xformers must link against the same CUDA runtime as pytorch, so we override
+# the aggregate CBC default (12.4) to 12.8 here.
+cuda_compiler_version:
+  - 12.8
