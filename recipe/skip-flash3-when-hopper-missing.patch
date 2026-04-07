@@ -1,0 +1,36 @@
+Subject: Skip the flash-attention 3 extension when hopper sources are absent
+
+The xformers 0.0.30 sdist on PyPI omits
+`third_party/flash-attention/hopper/`. `get_flash_attention3_extensions()`
+does not notice: it globs that directory, ends up with `sources=[]`,
+and still registers a `CUDAExtension(name="xformers._C_flashattention3",
+sources=[])`. setuptools then runs the C++ linker with zero object
+files and produces an empty `_C_flashattention3.so` that has no
+`PyInit__C_flashattention3` symbol, so `import xformers.ops` crashes
+with `ImportError: dynamic module does not define module export
+function (PyInit__C_flashattention3)`.
+
+Bail out of the function if the hopper directory is missing (sdist
+build) so the extension is simply skipped. Users who build from the
+git checkout — which has the submodule — keep the flash-attention 3
+path.
+
+Upstream issue: fa3 hopper sources are intentionally dropped from the
+sdist. Submitting a PR upstream is tracked separately.
+
+--- a/setup.py
++++ b/setup.py
+@@ -308,6 +308,13 @@ def get_flash_attention3_extensions(cuda_version: int, extra_compile_args):
+         return []
+
+     flash_root = os.path.join(this_dir, "third_party", "flash-attention")
++    # The PyPI sdist omits third_party/flash-attention/hopper, which is where
++    # flash-attention v3's CUDA sources live. Without it we would build an
++    # empty _C_flashattention3.so that has no PyInit symbol and crashes at
++    # import time. Skip the extension entirely in that case.
++    if not os.path.isdir(os.path.join(flash_root, "hopper")):
++        return []
++
+     cutlass_inc = os.path.join(flash_root, "csrc", "cutlass", "include")
+     if not os.path.exists(flash_root) or not os.path.exists(cutlass_inc):
+         raise RuntimeError(

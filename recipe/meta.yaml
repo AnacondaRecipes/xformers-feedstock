@@ -8,6 +8,14 @@ package:
 source:
   - url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
     sha256: a12bf3eb39e294cdbe8a7253ac9b665f41bac61d6d98df174e34ef7bdb6f2fc4
+    patches:
+      # The xformers 0.0.30 sdist omits third_party/flash-attention/hopper/
+      # (the flash-attention v3 CUDA sources). Without this patch, setup.py
+      # still registers a CUDAExtension with an empty source list and the
+      # linker produces a stub _C_flashattention3.so with no PyInit symbol,
+      # crashing `import xformers.ops` at test time. The patch makes
+      # get_flash_attention3_extensions() bail out if hopper/ is missing.
+      - skip-flash3-when-hopper-missing.patch
   # Licenses for the third_party/* sources that ship in the sdist. The sdist
   # includes the cutlass headers and flash-attention sources but omits their
   # LICENSE files, so fetch them separately to satisfy license_file in about:.
