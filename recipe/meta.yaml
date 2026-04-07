@@ -76,8 +76,9 @@ requirements:
     - wheel
     # pytorch 2.7.0 on pkgs/main only has `cpu_openblas_*`, `cpu_mkl_*`, and
     # `gpu_cuda128_*` build variants. Pin explicitly to match. Also note that
-    # Eric Dill's tip on vllm-feedstock#3 commit 62ba0d4d recommends pinning
-    # libtorch host-only with the BLAS sub-variant to avoid overlinking.
+    # Eric Lundby's review tips on AnacondaRecipes/vllm-feedstock#3 (implemented
+    # by Andy in commit 62ba0d4d) recommend pinning libtorch host-only with the
+    # BLAS sub-variant to avoid overlinking.
     - pytorch 2.7.0=cpu_openblas*                  # [cpu_or_cuda == "cpu"]
     - pytorch 2.7.0=gpu_cuda128*                   # [cpu_or_cuda == "cuda"]
     - libtorch 2.7.0=cpu_openblas*                 # [cpu_or_cuda == "cpu"]
