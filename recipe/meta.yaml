@@ -32,9 +32,15 @@ build:
   skip: true  # [py<310 or py>312 or win or (cpu_or_cuda == "cuda" and not (linux and x86_64))]
   string: cpu_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}   # [cpu_or_cuda == "cpu"]
   string: cuda_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cpu_or_cuda == "cuda"]
+  # Pass cpu_or_cuda (the variant key) directly into the build env so build.sh
+  # can branch on it without needing to second-guess cuda_compiler_version. The
+  # `script_env: cuda_compiler_version=None  # [cpu_or_cuda == "cpu"]` override
+  # pattern does NOT work — script_env whitelists env vars to pass through, it
+  # does not override the value, so the CPU variant would still see
+  # cuda_compiler_version=12.8 from the variant matrix. Keying off cpu_or_cuda
+  # is unambiguous.
   script_env:
-    - cuda_compiler_version=None                   # [cpu_or_cuda == "cpu"]
-    - cuda_compiler_version={{ cuda_compiler_version }}  # [cpu_or_cuda == "cuda"]
+    - cpu_or_cuda={{ cpu_or_cuda }}
     - package_version={{ version }}
   # CUDA *-dev packages have run_exports that would pin cuda-cudart/libcublas/etc.
   # into xformers' run deps. pytorch's own run deps already bring in the runtime
