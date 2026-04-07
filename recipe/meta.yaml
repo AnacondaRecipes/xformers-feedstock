@@ -8,14 +8,18 @@ package:
 source:
   - url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
     sha256: a12bf3eb39e294cdbe8a7253ac9b665f41bac61d6d98df174e34ef7bdb6f2fc4
-  # Licenses for the third_party/* sources that ship in the sdist. The sdist includes
-  # the cutlass headers and flash-attention sources but omits their LICENSE files,
-  # so fetch them separately to satisfy license_file in about:.
-  - url: https://raw.githubusercontent.com/NVIDIA/cutlass/main/LICENSE.txt
-    sha256: 80a7a18b73d41f64dd9ca881af35938f8de88b18c728703251f4c94d1299884d
+  # Licenses for the third_party/* sources that ship in the sdist. The sdist
+  # includes the cutlass headers and flash-attention sources but omits their
+  # LICENSE files, so fetch them separately to satisfy license_file in about:.
+  # URLs pinned to the exact tags bundled by xformers 0.0.30 (cutlass version
+  # confirmed via include/cutlass/version.h CUTLASS_MAJOR/MINOR/PATCH = 3.8.0;
+  # flash-attention version from third_party/flash-attention/version.txt). Do
+  # NOT fetch from `main` — copyright-year edits drift the SHA and break builds.
+  - url: https://raw.githubusercontent.com/NVIDIA/cutlass/v3.8.0/LICENSE.txt
+    sha256: 42fec630f410aa308f70a51a89fadcd19586fa620f9831a32bee528a9a10000e
     file_name: third_party/cutlass/LICENSE.txt
     folder: third_party/cutlass
-  - url: https://raw.githubusercontent.com/Dao-AILab/flash-attention/main/LICENSE
+  - url: https://raw.githubusercontent.com/Dao-AILab/flash-attention/v2.7.4/LICENSE
     sha256: 8c9ccb96c065e706135b6cbad279b721da6156e51f3a5f27c6b3329af9416d73
     folder: third_party/flash-attention
 
