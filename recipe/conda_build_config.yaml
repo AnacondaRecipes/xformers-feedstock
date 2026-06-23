@@ -1,9 +1,25 @@
-cpu_or_cuda:
-  - cpu
-  - cuda
+# pytorch 2.12.0 on pkgs/main ships gpu_cuda129 and gpu_cuda130 builds. xformers
+# links against pytorch/libtorch and must use the same CUDA runtime, so we build
+# one CUDA variant per pytorch CUDA flavor (12.9 and 13.0), overriding the
+# aggregate CBC default. CUDA variants are linux-64 only — matching pytorch's
+# xformers platform support and the prior 0.0.30 scope. The CPU variant also
+# builds on linux-aarch64 and osx-arm64.
+gpu_variant:
+  - none
+  - cuda                       # [linux and x86_64]
+  - cuda                       # [linux and x86_64]
 
-# pytorch 2.7.0 on pkgs/main was built against CUDA 12.8 (`gpu_cuda128_*`).
-# xformers must link against the same CUDA runtime as pytorch, so we override
-# the aggregate CBC default (12.4) to 12.8 here.
-cuda_compiler_version:
-  - 12.8
+cuda_compiler_version:         # [linux and x86_64]
+  - none                       # [linux and x86_64]
+  - 12.9                       # [linux and x86_64]
+  - 13.0                       # [linux and x86_64]
+
+# Keep cuda_compiler declared locally so {{ compiler('cuda') }} resolves to
+# cuda-nvcc on PBP for this overridden variant matrix.
+cuda_compiler:                 # [linux and x86_64]
+  - cuda-nvcc                  # [linux and x86_64]
+
+zip_keys:                      # [linux and x86_64]
+  -                            # [linux and x86_64]
+    - gpu_variant              # [linux and x86_64]
+    - cuda_compiler_version    # [linux and x86_64]
