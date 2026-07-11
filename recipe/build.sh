@@ -12,7 +12,7 @@ echo "gpu_variant=${gpu_variant}  cuda_compiler_version=${cuda_compiler_version}
 
 if [[ "${gpu_variant}" == "cuda" ]]; then
     # CUDA arch list per aggregate COOKBOOK §"CUDA Arch Lists by Version":
-    #   12.9: Maxwell→Blackwell SM 10.0 (10.3/12.x not supported by nvcc 12.9).
+    #   12.x: Maxwell→Blackwell SM 10.0 (10.3/12.x not supported by nvcc 12.8/12.9).
     #   13.0: drops Maxwell/Pascal/Volta (5.x/6.x/7.0); min Turing (7.5).
     if [[ "${cuda_compiler_version}" == 12.* ]]; then
         export TORCH_CUDA_ARCH_LIST="5.0;6.0;6.1;7.0;7.5;8.0;8.6;8.9;9.0;10.0+PTX"
