@@ -11,6 +11,12 @@ package:
 source:
   - url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
     sha256: 716bd9ffe61f46c2cc0536abf8b8c43ec594bea47a49394ea5cfa417e9de6a6f
+    patches:
+      # 0.0.34's pt_stable_utils.h includes cuda.h unconditionally, breaking every
+      # CPU build. Backport of upstream 88dcc2ce3 "Re-allow CUDA-less builds"
+      # (shipped in 0.0.35), with the cpp->cu rename expressed as delete+add so
+      # `patch -p1` can apply it.
+      - patches/0001-re-allow-cuda-less-builds.patch
   # The xformers 0.0.34 sdist bundles cutlass headers and flash-attention sources
   # under third_party/ but omits their LICENSE files; fetch separately to satisfy
   # license_file in about:. cutlass version confirmed via
