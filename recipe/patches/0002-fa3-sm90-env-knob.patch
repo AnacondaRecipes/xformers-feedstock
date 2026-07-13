@@ -1,0 +1,15 @@
+diff --git a/setup.py b/setup.py
+index 3d8f921..8d5f9ba 100644
+--- a/setup.py
++++ b/setup.py
+@@ -154,6 +154,10 @@ def get_flash_attention3_nvcc_archs_flags(cuda_version: int):
+         num = 10 * int(match.group("major")) + int(match.group("minor"))
+         if num not in [80, 90]:  # only support Sm80/Sm90
+             continue
++        # Anaconda: allow skipping FA3's sm_90 codegen (CUDA 13.0 ptxas segfaults
++        # on flash_fwd_hdim64_256_bf16_split_sm90); sm_80 FA3 kernels are unaffected.
++        if num == 90 and os.getenv("XFORMERS_FA3_DISABLE_SM90", "0") != "0":
++            continue
+         suffix = match.group("suffix")
+         nvcc_archs_flags.append(
+             f"-gencode=arch=compute_{num}{suffix},code=sm_{num}{suffix}"

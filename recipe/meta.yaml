@@ -17,6 +17,9 @@ source:
       # (shipped in 0.0.35), with the cpp->cu rename expressed as delete+add so
       # `patch -p1` can apply it.
       - patches/0001-re-allow-cuda-less-builds.patch
+      # Adds the XFORMERS_FA3_DISABLE_SM90 env knob: skips only FA3's sm_90 codegen
+      # (CUDA 13.0 ptxas segfault — see build.sh); inert unless the env var is set.
+      - patches/0002-fa3-sm90-env-knob.patch
   # The xformers 0.0.34 sdist bundles cutlass headers and flash-attention sources
   # under third_party/ but omits their LICENSE files; fetch separately to satisfy
   # license_file in about:. cutlass version confirmed via
