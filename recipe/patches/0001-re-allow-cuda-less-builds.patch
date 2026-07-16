@@ -1,0 +1,162 @@
+diff --git a/setup.py b/setup.py
+index 072c98c..3d8f921 100644
+--- a/setup.py
++++ b/setup.py
+@@ -392,10 +392,9 @@ def get_extensions():
+         stable_args = [
+             "-DTORCH_STABLE_ONLY",
+             "-DTORCH_TARGET_VERSION=0x020a000000000000",
+-            "-DUSE_CUDA",
+         ]
+         extra_compile_args["cxx"].extend(stable_args)
+-        extra_compile_args["nvcc"].extend(stable_args)
++        extra_compile_args["nvcc"].extend(stable_args + ["-DUSE_CUDA"])
+ 
+         ext_modules += get_flash_attention3_extensions(cuda_version, extra_compile_args)
+ 
+diff --git a/xformers/csrc/pt_stable_utils.cpp b/xformers/csrc/pt_stable_utils.cpp
+deleted file mode 100644
+index 07bf042..0000000
+--- a/xformers/csrc/pt_stable_utils.cpp
++++ /dev/null
+@@ -1,36 +0,0 @@
+-#include <deque>
+-#include <mutex>
+-#include <vector>
+-
+-#include "pt_stable_utils.h"
+-
+-namespace {
+-
+-std::deque<std::once_flag> device_flags;
+-std::vector<cudaDeviceProp> device_properties;
+-
+-void initCUDAContextVectors() {
+-  static bool init_flag [[maybe_unused]] = []() {
+-    int num_gpus;
+-    STD_CUDA_CHECK(cudaGetDeviceCount(&num_gpus));
+-    device_flags.resize(num_gpus);
+-    device_properties.resize(num_gpus);
+-    return true;
+-  }();
+-}
+-
+-void initDeviceProperty(torch::stable::accelerator::DeviceIndex device_index) {
+-  cudaDeviceProp device_prop{};
+-  STD_CUDA_CHECK(cudaGetDeviceProperties(&device_prop, device_index));
+-  device_properties[device_index] = device_prop;
+-}
+-
+-} // namespace
+-
+-cudaDeviceProp* xf_getCurrentDeviceProperties() {
+-  initCUDAContextVectors();
+-  torch::stable::accelerator::DeviceIndex device =
+-      torch::stable::accelerator::getCurrentDeviceIndex();
+-  std::call_once(device_flags[device], initDeviceProperty, device);
+-  return &device_properties[device];
+-}
+diff --git a/xformers/csrc/pt_stable_utils.cu b/xformers/csrc/pt_stable_utils.cu
+new file mode 100644
+index 0000000..07bf042
+--- /dev/null
++++ b/xformers/csrc/pt_stable_utils.cu
+@@ -0,0 +1,36 @@
++#include <deque>
++#include <mutex>
++#include <vector>
++
++#include "pt_stable_utils.h"
++
++namespace {
++
++std::deque<std::once_flag> device_flags;
++std::vector<cudaDeviceProp> device_properties;
++
++void initCUDAContextVectors() {
++  static bool init_flag [[maybe_unused]] = []() {
++    int num_gpus;
++    STD_CUDA_CHECK(cudaGetDeviceCount(&num_gpus));
++    device_flags.resize(num_gpus);
++    device_properties.resize(num_gpus);
++    return true;
++  }();
++}
++
++void initDeviceProperty(torch::stable::accelerator::DeviceIndex device_index) {
++  cudaDeviceProp device_prop{};
++  STD_CUDA_CHECK(cudaGetDeviceProperties(&device_prop, device_index));
++  device_properties[device_index] = device_prop;
++}
++
++} // namespace
++
++cudaDeviceProp* xf_getCurrentDeviceProperties() {
++  initCUDAContextVectors();
++  torch::stable::accelerator::DeviceIndex device =
++      torch::stable::accelerator::getCurrentDeviceIndex();
++  std::call_once(device_flags[device], initDeviceProperty, device);
++  return &device_properties[device];
++}
+diff --git a/xformers/csrc/pt_stable_utils.h b/xformers/csrc/pt_stable_utils.h
+index 083b4e9..d7fc0bd 100644
+--- a/xformers/csrc/pt_stable_utils.h
++++ b/xformers/csrc/pt_stable_utils.h
+@@ -9,8 +9,10 @@
+ #include <type_traits>
+ #include <vector>
+ 
++#ifdef USE_CUDA
+ #include <cuda.h>
+ #include <cuda_runtime.h>
++#endif
+ 
+ #include <torch/csrc/stable/library.h>
+ #include <torch/csrc/stable/macros.h>
+@@ -20,6 +22,8 @@
+ #include <torch/headeronly/core/TensorAccessor.h>
+ #include <torch/headeronly/util/Metaprogramming.h>
+ 
++#ifdef USE_CUDA
++
+ #define XF_CUDA_DRIVER_CHECK(EXPR)                   \
+   do {                                               \
+     const CUresult __err = EXPR;                     \
+@@ -30,8 +34,12 @@
+ 
+ cudaDeviceProp* xf_getCurrentDeviceProperties();
+ 
++#endif
++
+ namespace {
+ 
++#ifdef USE_CUDA
++
+ cudaStream_t xf_getCurrentCUDAStream(
+     torch::stable::accelerator::DeviceIndex index = -1) {
+   // This would be the correct code to use, but it's currently broken.
+@@ -44,17 +52,19 @@ cudaStream_t xf_getCurrentCUDAStream(
+   return static_cast<cudaStream_t>(ret);
+ }
+ 
++template <typename T>
++constexpr __host__ __device__ inline T ceil_div(T a, T b) {
++  return (a + b - 1) / b;
++}
++
++#endif
++
+ template <typename dtype, size_t ndim>
+ auto xf_packed_accessor(const torch::stable::Tensor& t) {
+   return torch::headeronly::HeaderOnlyGenericPackedTensorAccessor<dtype, ndim>(
+       t.mutable_data_ptr<dtype>(), t.sizes().data(), t.strides().data());
+ }
+ 
+-template <typename T>
+-constexpr __host__ __device__ inline T ceil_div(T a, T b) {
+-  return (a + b - 1) / b;
+-}
+-
+ inline int32_t xf_get_layout(const torch::stable::Tensor& self) {
+   int32_t layout;
+   TORCH_ERROR_CODE_CHECK(aoti_torch_get_layout(self.get(), &layout));

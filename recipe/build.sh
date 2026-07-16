@@ -12,7 +12,7 @@ echo "gpu_variant=${gpu_variant}  cuda_compiler_version=${cuda_compiler_version}
 
 if [[ "${gpu_variant}" == "cuda" ]]; then
     # CUDA arch list per aggregate COOKBOOK §"CUDA Arch Lists by Version":
-    #   12.9: Maxwell→Blackwell SM 10.0 (10.3/12.x not supported by nvcc 12.9).
+    #   12.x: Maxwell→Blackwell SM 10.0 (10.3/12.x not supported by nvcc 12.8/12.9).
     #   13.0: drops Maxwell/Pascal/Volta (5.x/6.x/7.0); min Turing (7.5).
     if [[ "${cuda_compiler_version}" == 12.* ]]; then
         export TORCH_CUDA_ARCH_LIST="5.0;6.0;6.1;7.0;7.5;8.0;8.6;8.9;9.0;10.0+PTX"
@@ -24,6 +24,15 @@ if [[ "${gpu_variant}" == "cuda" ]]; then
     fi
     export TORCH_NVCC_FLAGS="-Xfatbin -compress-all"
     export FORCE_CUDA=1
+
+    # CUDA 13.0's ptxas segfaults compiling FA3's flash_fwd_hdim64_256_bf16_split_sm90
+    # for sm_90 (7/10 cuda130 builds across two graphs; cuda 12.8 and the sm_80 cubins
+    # of the same kernels are unaffected). Skip only FA3's sm_90 codegen on 13.x via the
+    # env knob added by patches/0002 — FA3 keeps sm_80 (A100), the main _C fmha keeps
+    # sm_90, and H100+cuda130 falls back to the cutlass fmha at runtime.
+    if [[ "${cuda_compiler_version}" == 13.* ]]; then
+        export XFORMERS_FA3_DISABLE_SM90=1
+    fi
 fi
 
 # avoid "error: 'value' is unavailable: introduced in macOS 10.13"

@@ -1,6 +1,6 @@
 {% set name = "xformers" %}
-{% set version = "0.0.35" %}
-{% set build_number = 1 %}
+{% set version = "0.0.34" %}
+{% set build_number = 0 %}
 {% set cuda_enabled = (gpu_variant or "none") == "cuda" %}
 {% set build = build_number + 100 if cuda_enabled else build_number %}
 
@@ -10,24 +10,38 @@ package:
 
 source:
   - url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-    sha256: f7fc183a58e4bf0e2ae339a18fb1b1d4a37854c0f2545b4f360fef001646ab76
-  # The xformers 0.0.35 sdist bundles the cutlass headers under third_party/
-  # but omits cutlass' LICENSE.txt, so fetch it separately to satisfy
+    sha256: 716bd9ffe61f46c2cc0536abf8b8c43ec594bea47a49394ea5cfa417e9de6a6f
+    patches:
+      # 0.0.34's pt_stable_utils.h includes cuda.h unconditionally, breaking every
+      # CPU build. Backport of upstream 88dcc2ce3 "Re-allow CUDA-less builds"
+      # (shipped in 0.0.35), with the cpp->cu rename expressed as delete+add so
+      # `patch -p1` can apply it.
+      - patches/0001-re-allow-cuda-less-builds.patch
+      # Adds the XFORMERS_FA3_DISABLE_SM90 env knob: skips only FA3's sm_90 codegen
+      # (CUDA 13.0 ptxas segfault — see build.sh); inert unless the env var is set.
+      - patches/0002-fa3-sm90-env-knob.patch
+  # The xformers 0.0.34 sdist bundles cutlass headers and flash-attention sources
+  # under third_party/ but omits their LICENSE files; fetch separately to satisfy
   # license_file in about:. cutlass version confirmed via
   # third_party/cutlass/include/cutlass/version.h (MAJOR/MINOR/PATCH = 4.3.0).
-  # Pin to the exact tag — do NOT fetch from `main` (copyright-year edits drift
-  # the SHA and break builds). 0.0.35 no longer bundles flash-attention or
-  # sputnik sources, so those licenses are no longer needed.
+  # Pin to the exact tag/commit — do NOT fetch from `main` (copyright-year edits
+  # drift the SHA and break builds).
   - url: https://raw.githubusercontent.com/NVIDIA/cutlass/v4.3.0/LICENSE.txt
     sha256: 80a7a18b73d41f64dd9ca881af35938f8de88b18c728703251f4c94d1299884d
     folder: third_party/cutlass
     file_name: LICENSE.txt
+  # flash-attention pinned at xformers v0.0.34's submodule commit (de1584b);
+  # the sdist has no version.txt, so pin the raw URL to that exact commit.
+  - url: https://raw.githubusercontent.com/Dao-AILab/flash-attention/de1584b5328321189a4d7832fe29bbd6813bf6ed/LICENSE
+    sha256: 8c9ccb96c065e706135b6cbad279b721da6156e51f3a5f27c6b3329af9416d73
+    folder: third_party/flash-attention
+    file_name: LICENSE
 
 build:
   number: {{ build }}
   # CUDA variant is linux-64 only (matches pytorch's xformers platform support).
   # CPU variant builds on linux-64/linux-aarch64/osx-arm64. No Windows support.
-  # py310-py314 (full pytorch 2.12.0 coverage on pkgs/main).
+  # py310-py314 (full pytorch 2.10.0 coverage on pkgs/main).
   skip: true  # [py<310 or win or (gpu_variant == "cuda" and not (linux and x86_64))]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ build }}  # [gpu_variant == "cuda"]
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ build }}                                                  # [gpu_variant != "cuda"]
@@ -62,20 +76,20 @@ requirements:
     - pip
     - setuptools
     - wheel
-    # xformers 0.0.35 install_requires `torch>=2.10`; we pin to pytorch 2.12.0 so
-    # the linked CUDA runtime matches across host/run. pytorch 2.12.0 on pkgs/main
-    # ships cpu_openblas/cpu_mkl and gpu_cuda129/gpu_cuda130. Per Eric Lundby's
-    # review tips on AnacondaRecipes/vllm-feedstock#3, pin libtorch host-only with
-    # the BLAS/CUDA sub-variant to avoid overlinking.
+    # xformers 0.0.34 wheel metadata requires `torch==2.10.0` exactly; pin pytorch
+    # 2.10.0 so the linked CUDA runtime matches across host/run. pytorch 2.10.0 on
+    # pkgs/main ships cpu_openblas/cpu_mkl and gpu_cuda128/gpu_cuda130. Per Eric
+    # Lundby's review tips on AnacondaRecipes/vllm-feedstock#3, pin libtorch
+    # host-only with the BLAS/CUDA sub-variant to avoid overlinking.
     # CPU BLAS: cpu_mkl is x86_64-only (MKL doesn't ship for ARM); use cpu_openblas
     # elsewhere. Matches torchao so downstreams (unsloth) needing both resolve a single
     # pytorch CPU build. See review-pr GUIDELINES Common Issues #32.
-    - pytorch 2.12.0=cpu_mkl*                                                   # [gpu_variant != "cuda" and (linux or win) and x86_64]
-    - pytorch 2.12.0=cpu_openblas*                                              # [gpu_variant != "cuda" and not ((linux or win) and x86_64)]
-    - pytorch 2.12.0=gpu_cuda{{ cuda_compiler_version | replace('.', '') }}*    # [gpu_variant == "cuda"]
-    - libtorch 2.12.0=cpu_mkl*                                                  # [gpu_variant != "cuda" and (linux or win) and x86_64]
-    - libtorch 2.12.0=cpu_openblas*                                             # [gpu_variant != "cuda" and not ((linux or win) and x86_64)]
-    - libtorch 2.12.0=gpu_cuda{{ cuda_compiler_version | replace('.', '') }}*   # [gpu_variant == "cuda"]
+    - pytorch 2.10.0=cpu_mkl*                                                   # [gpu_variant != "cuda" and (linux or win) and x86_64]
+    - pytorch 2.10.0=cpu_openblas*                                              # [gpu_variant != "cuda" and not ((linux or win) and x86_64)]
+    - pytorch 2.10.0=gpu_cuda{{ cuda_compiler_version | replace('.', '') }}*    # [gpu_variant == "cuda"]
+    - libtorch 2.10.0=cpu_mkl*                                                  # [gpu_variant != "cuda" and (linux or win) and x86_64]
+    - libtorch 2.10.0=cpu_openblas*                                             # [gpu_variant != "cuda" and not ((linux or win) and x86_64)]
+    - libtorch 2.10.0=gpu_cuda{{ cuda_compiler_version | replace('.', '') }}*   # [gpu_variant == "cuda"]
     # CUDA development headers and libraries (linking only; runtime comes via pytorch).
     - cuda-version =={{ cuda_compiler_version }}   # [gpu_variant == "cuda"]
     - cuda-cudart-dev                              # [gpu_variant == "cuda"]
@@ -89,14 +103,13 @@ requirements:
     - libcusparse-dev                              # [gpu_variant == "cuda"]
 
   run:
-    # Upstream install_requires (xformers 0.0.35/requirements.txt):
-    #   torch >= 2.10
-    #   numpy
+    # Upstream deps (xformers 0.0.34 wheel metadata): numpy, torch==2.10.0.
+    # The exact torch pin is upstream's, not ours — 0.0.34 is the torch-2.10 pairing.
     - python
     - numpy
-    - pytorch 2.12.0=cpu_mkl*                                                  # [gpu_variant != "cuda" and (linux or win) and x86_64]
-    - pytorch 2.12.0=cpu_openblas*                                             # [gpu_variant != "cuda" and not ((linux or win) and x86_64)]
-    - pytorch 2.12.0=gpu_cuda{{ cuda_compiler_version | replace('.', '') }}*   # [gpu_variant == "cuda"]
+    - pytorch 2.10.0=cpu_mkl*                                                  # [gpu_variant != "cuda" and (linux or win) and x86_64]
+    - pytorch 2.10.0=cpu_openblas*                                             # [gpu_variant != "cuda" and not ((linux or win) and x86_64)]
+    - pytorch 2.10.0=gpu_cuda{{ cuda_compiler_version | replace('.', '') }}*   # [gpu_variant == "cuda"]
     # Hard, unbounded __cuda gate so the CUDA build is excluded from non-GPU
     # hosts (version is cuda-version's job, not __cuda's).
     - __cuda                                       # [gpu_variant == "cuda"]
@@ -126,6 +139,7 @@ about:
   license_file:
     - LICENSE
     - third_party/cutlass/LICENSE.txt
+    - third_party/flash-attention/LICENSE
   doc_url: https://facebookresearch.github.io/xformers
   dev_url: https://github.com/facebookresearch/xformers
 
