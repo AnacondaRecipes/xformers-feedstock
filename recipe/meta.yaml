@@ -1,6 +1,6 @@
 {% set name = "xformers" %}
 {% set version = "0.0.35" %}
-{% set build_number = 1 %}
+{% set build_number = 2 %}
 {% set cuda_enabled = (gpu_variant or "none") == "cuda" %}
 {% set build = build_number + 100 if cuda_enabled else build_number %}
 
@@ -27,7 +27,7 @@ build:
   number: {{ build }}
   # CUDA variant is linux-64 only (matches pytorch's xformers platform support).
   # CPU variant builds on linux-64/linux-aarch64/osx-arm64. No Windows support.
-  # py310-py314 (full pytorch 2.12.0 coverage on pkgs/main).
+  # py310-py314 (full pytorch 2.13.0 coverage on pkgs/main).
   skip: true  # [py<310 or win or (gpu_variant == "cuda" and not (linux and x86_64))]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ build }}  # [gpu_variant == "cuda"]
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ build }}                                                  # [gpu_variant != "cuda"]
@@ -62,20 +62,20 @@ requirements:
     - pip
     - setuptools
     - wheel
-    # xformers 0.0.35 install_requires `torch>=2.10`; we pin to pytorch 2.12.0 so
-    # the linked CUDA runtime matches across host/run. pytorch 2.12.0 on pkgs/main
+    # xformers 0.0.35 install_requires `torch>=2.10`; we pin to pytorch 2.13.0 so
+    # the linked CUDA runtime matches across host/run. pytorch 2.13.0 on pkgs/main
     # ships cpu_openblas/cpu_mkl and gpu_cuda129/gpu_cuda130. Per Eric Lundby's
     # review tips on AnacondaRecipes/vllm-feedstock#3, pin libtorch host-only with
     # the BLAS/CUDA sub-variant to avoid overlinking.
     # CPU BLAS: cpu_mkl is x86_64-only (MKL doesn't ship for ARM); use cpu_openblas
     # elsewhere. Matches torchao so downstreams (unsloth) needing both resolve a single
     # pytorch CPU build. See review-pr GUIDELINES Common Issues #32.
-    - pytorch 2.12.0=cpu_mkl*                                                   # [gpu_variant != "cuda" and (linux or win) and x86_64]
-    - pytorch 2.12.0=cpu_openblas*                                              # [gpu_variant != "cuda" and not ((linux or win) and x86_64)]
-    - pytorch 2.12.0=gpu_cuda{{ cuda_compiler_version | replace('.', '') }}*    # [gpu_variant == "cuda"]
-    - libtorch 2.12.0=cpu_mkl*                                                  # [gpu_variant != "cuda" and (linux or win) and x86_64]
-    - libtorch 2.12.0=cpu_openblas*                                             # [gpu_variant != "cuda" and not ((linux or win) and x86_64)]
-    - libtorch 2.12.0=gpu_cuda{{ cuda_compiler_version | replace('.', '') }}*   # [gpu_variant == "cuda"]
+    - pytorch 2.13.0=cpu_mkl*                                                   # [gpu_variant != "cuda" and (linux or win) and x86_64]
+    - pytorch 2.13.0=cpu_openblas*                                              # [gpu_variant != "cuda" and not ((linux or win) and x86_64)]
+    - pytorch 2.13.0=gpu_cuda{{ cuda_compiler_version | replace('.', '') }}*    # [gpu_variant == "cuda"]
+    - libtorch 2.13.0=cpu_mkl*                                                  # [gpu_variant != "cuda" and (linux or win) and x86_64]
+    - libtorch 2.13.0=cpu_openblas*                                             # [gpu_variant != "cuda" and not ((linux or win) and x86_64)]
+    - libtorch 2.13.0=gpu_cuda{{ cuda_compiler_version | replace('.', '') }}*   # [gpu_variant == "cuda"]
     # CUDA development headers and libraries (linking only; runtime comes via pytorch).
     - cuda-version =={{ cuda_compiler_version }}   # [gpu_variant == "cuda"]
     - cuda-cudart-dev                              # [gpu_variant == "cuda"]
@@ -94,9 +94,9 @@ requirements:
     #   numpy
     - python
     - numpy
-    - pytorch 2.12.0=cpu_mkl*                                                  # [gpu_variant != "cuda" and (linux or win) and x86_64]
-    - pytorch 2.12.0=cpu_openblas*                                             # [gpu_variant != "cuda" and not ((linux or win) and x86_64)]
-    - pytorch 2.12.0=gpu_cuda{{ cuda_compiler_version | replace('.', '') }}*   # [gpu_variant == "cuda"]
+    - pytorch 2.13.0=cpu_mkl*                                                  # [gpu_variant != "cuda" and (linux or win) and x86_64]
+    - pytorch 2.13.0=cpu_openblas*                                             # [gpu_variant != "cuda" and not ((linux or win) and x86_64)]
+    - pytorch 2.13.0=gpu_cuda{{ cuda_compiler_version | replace('.', '') }}*   # [gpu_variant == "cuda"]
     # Hard, unbounded __cuda gate so the CUDA build is excluded from non-GPU
     # hosts (version is cuda-version's job, not __cuda's).
     - __cuda                                       # [gpu_variant == "cuda"]
