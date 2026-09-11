@@ -64,9 +64,9 @@ requirements:
     - wheel
     # xformers 0.0.35 install_requires `torch>=2.10`; we pin to pytorch 2.14.0 so
     # the linked CUDA runtime matches across host/run. pytorch 2.14.0 on pkgs/main
-    # ships cpu_openblas/cpu_mkl and gpu_cuda129 (CUDA 12.9 only — no cuda130 for
-    # 2.14). Per Eric Lundby's review tips on AnacondaRecipes/vllm-feedstock#3, pin
-    # libtorch host-only with the BLAS/CUDA sub-variant to avoid overlinking.
+    # ships cpu_openblas/cpu_mkl and gpu_cuda129/gpu_cuda130. Per Eric Lundby's
+    # review tips on AnacondaRecipes/vllm-feedstock#3, pin libtorch host-only with
+    # the BLAS/CUDA sub-variant to avoid overlinking.
     # CPU BLAS: cpu_mkl is x86_64-only (MKL doesn't ship for ARM); use cpu_openblas
     # elsewhere. Matches torchao so downstreams (unsloth) needing both resolve a single
     # pytorch CPU build. See review-pr GUIDELINES Common Issues #32.
