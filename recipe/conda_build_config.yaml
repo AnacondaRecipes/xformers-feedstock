@@ -1,4 +1,4 @@
-# pytorch 2.12.0 on pkgs/main ships gpu_cuda129 and gpu_cuda130 builds. xformers
+# pytorch 2.14.0 on pkgs/main ships gpu_cuda129 and gpu_cuda130 builds. xformers
 # links against pytorch/libtorch and must use the same CUDA runtime, so we build
 # one CUDA variant per pytorch CUDA flavor (12.9 and 13.0), overriding the
 # aggregate CBC default. CUDA variants are linux-64 only — matching pytorch's
