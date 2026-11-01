@@ -29,10 +29,10 @@ build:
   # anaconda-linter cannot parse a jinja-computed `number:`.
   number: 4    # [gpu_variant != "cuda"]
   number: 104  # [gpu_variant == "cuda"]
-  # CUDA variant is linux-64 only (matches pytorch's xformers platform support).
-  # CPU variant builds on linux-64/linux-aarch64/osx-arm64. No Windows support.
+  # CUDA variants: linux-64 and win-64. CPU variant: linux-64, linux-aarch64, osx-arm64,
+  # win-64. win-arm64 skipped: upstream publishes no win-arm64 build.
   # py311-py315: pytorch 2.15 on pkgs/main has no py3.10 (upstream itself allows >=3.9).
-  skip: true  # [py<311 or win or (gpu_variant == "cuda" and not (linux and x86_64))]
+  skip: true  # [py<311 or (win and arm64) or (gpu_variant == "cuda" and not x86_64)]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                         # [gpu_variant != "cuda"]
   # Pass the variant keys into the build env so build.sh can branch on

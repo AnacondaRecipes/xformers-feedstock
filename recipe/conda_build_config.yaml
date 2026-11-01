@@ -1,9 +1,9 @@
 # pytorch 2.15.0 on pkgs/main ships gpu_cuda129 and gpu_cuda130 builds. xformers
 # links against pytorch/libtorch and must use the same CUDA runtime, so we build
 # one CUDA variant per pytorch CUDA flavor (12.9 and 13.0), overriding the
-# aggregate CBC default. CUDA variants are linux-64 only — matching pytorch's
-# xformers platform support and the prior 0.0.30 scope. The CPU variant also
-# builds on linux-aarch64 and osx-arm64.
+# aggregate CBC default. CUDA variants are built on linux-64 and win-64 (upstream
+# publishes CUDA wheels for both). The CPU variant also builds on linux-aarch64
+# and osx-arm64.
 #
 # The `none` default is deliberately UN-gated: the aggregate root CBC sets
 # cuda_compiler_version on `[linux or (win and x86_64)]` (which includes
@@ -13,15 +13,15 @@
 # to a single CPU variant. cuda_compiler is inherited from the root CBC.
 gpu_variant:
   - none
-  - cuda                       # [linux and x86_64]
-  - cuda                       # [linux and x86_64]
+  - cuda                       # [(linux or win) and x86_64]
+  - cuda                       # [(linux or win) and x86_64]
 
 cuda_compiler_version:
   - none
-  - 12.9                       # [linux and x86_64]
-  - 13.0                       # [linux and x86_64]
+  - 12.9                       # [(linux or win) and x86_64]
+  - 13.0                       # [(linux or win) and x86_64]
 
-zip_keys:                      # [linux and x86_64]
-  -                            # [linux and x86_64]
-    - gpu_variant              # [linux and x86_64]
-    - cuda_compiler_version    # [linux and x86_64]
+zip_keys:                      # [(linux or win) and x86_64]
+  -                            # [(linux or win) and x86_64]
+    - gpu_variant              # [(linux or win) and x86_64]
+    - cuda_compiler_version    # [(linux or win) and x86_64]
