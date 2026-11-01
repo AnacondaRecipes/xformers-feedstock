@@ -15,8 +15,8 @@ source:
   # CUDA builds compile the header-only cutlass from the host `cutlass` package
   # (pinned below), whose license must ship with xformers. Pin to that exact tag —
   # never `main`, where copyright-year edits drift the SHA.
-  - url: https://raw.githubusercontent.com/NVIDIA/cutlass/v4.3.6/LICENSE.txt
-    sha256: 7bc733829f16663593865344541c6dcc433beb6b6b555c8f86a43e9b399993cf
+  - url: https://raw.githubusercontent.com/NVIDIA/cutlass/v4.3.3/LICENSE.txt
+    sha256: 80a7a18b73d41f64dd9ca881af35938f8de88b18c728703251f4c94d1299884d
     folder: third_party/cutlass
     fn: LICENSE.txt
 
@@ -76,9 +76,10 @@ requirements:
     - libtorch {{ pytorch_ver }}=cpu_mkl*                                                  # [gpu_variant != "cuda" and (linux or win) and x86_64]
     - libtorch {{ pytorch_ver }}=cpu_openblas*                                             # [gpu_variant != "cuda" and not ((linux or win) and x86_64)]
     - libtorch {{ pytorch_ver }}=gpu_cuda{{ cuda_compiler_version | replace('.', '') }}*   # [gpu_variant == "cuda"]
-    # Header-only; replaces the copy bundled in the sdist (see build.sh / bld.bat).
-    # 4.3.x = the minor upstream 0.0.35 bundles (third_party/cutlass is 4.3.0).
-    - cutlass 4.3.6                                # [gpu_variant == "cuda"]
+    # Header-only; replaces the sdist's bundled 4.3.0 copy (see build.sh / bld.bat).
+    # Not 4.3.6: its cute TMA headers call cuDriverGetVersion directly, leaving _C
+    # with an undefined libcuda symbol, so the extension fails to load.
+    - cutlass 4.3.3                                # [gpu_variant == "cuda"]
     # CUDA development headers and libraries (linking only; runtime comes via pytorch).
     - cuda-version =={{ cuda_compiler_version }}   # [gpu_variant == "cuda"]
     - cuda-cudart-dev                              # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # pinned by cuda-version
