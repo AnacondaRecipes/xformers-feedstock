@@ -1,6 +1,6 @@
-# CUDA variants compile 9-10 GPU architectures each (TORCH_CUDA_ARCH_LIST in recipe/build.sh)
-# — needs an extended timeout to avoid being killed at the default PBP build timeout.
-# 12 hours matches the onnxruntime CUDA build budget.
+# CUDA variants compile 6-9 GPU architectures each (TORCH_CUDA_ARCH_LIST in
+# recipe/build.sh and recipe/bld.bat) — needs an extended timeout to avoid being
+# killed at the default PBP build timeout. 12 hours matches the onnxruntime CUDA budget.
 task_timeout: 43200  # 12 hours
 
 # Opt into the aggregate CBC's py3.15 entries (python/numpy zip).

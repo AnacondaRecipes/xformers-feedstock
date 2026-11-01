@@ -12,27 +12,23 @@ package:
 source:
   - url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
     sha256: f7fc183a58e4bf0e2ae339a18fb1b1d4a37854c0f2545b4f360fef001646ab76
-  # The xformers 0.0.35 sdist bundles the cutlass headers under third_party/
-  # but omits cutlass' LICENSE.txt, so fetch it separately to satisfy
-  # license_file in about:. cutlass version confirmed via
-  # third_party/cutlass/include/cutlass/version.h (MAJOR/MINOR/PATCH = 4.3.0).
-  # Pin to the exact tag — do NOT fetch from `main` (copyright-year edits drift
-  # the SHA and break builds). 0.0.35 no longer bundles flash-attention or
-  # sputnik sources, so those licenses are no longer needed.
-  - url: https://raw.githubusercontent.com/NVIDIA/cutlass/v4.3.0/LICENSE.txt
-    sha256: 80a7a18b73d41f64dd9ca881af35938f8de88b18c728703251f4c94d1299884d
+  # CUDA builds compile the header-only cutlass from the host `cutlass` package
+  # (pinned below), whose license must ship with xformers. Pin to that exact tag —
+  # never `main`, where copyright-year edits drift the SHA.
+  - url: https://raw.githubusercontent.com/NVIDIA/cutlass/v4.3.6/LICENSE.txt
+    sha256: 7bc733829f16663593865344541c6dcc433beb6b6b555c8f86a43e9b399993cf
     folder: third_party/cutlass
-    file_name: LICENSE.txt
+    fn: LICENSE.txt
 
 build:
   # CUDA builds = CPU build number + 100. Literal per-variant lines because
   # anaconda-linter cannot parse a jinja-computed `number:`.
   number: 4    # [gpu_variant != "cuda"]
   number: 104  # [gpu_variant == "cuda"]
-  # CUDA variants: linux-64 and win-64. CPU variant: linux-64, linux-aarch64, osx-arm64,
-  # win-64. win-arm64 skipped: upstream publishes no win-arm64 build.
+  # CUDA variants: linux-64 and win-64. CPU variant: all platforms (win-arm64 via the
+  # aggregate CBC's py3.12+ matrix, matching pytorch 2.15's win-arm64 builds).
   # py311-py315: pytorch 2.15 on pkgs/main has no py3.10 (upstream itself allows >=3.9).
-  skip: true  # [py<311 or (win and arm64) or (gpu_variant == "cuda" and not x86_64)]
+  skip: true  # [py<311 or (gpu_variant == "cuda" and not x86_64)]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                         # [gpu_variant != "cuda"]
   # Pass the variant keys into the build env so build.sh can branch on
@@ -80,6 +76,9 @@ requirements:
     - libtorch {{ pytorch_ver }}=cpu_mkl*                                                  # [gpu_variant != "cuda" and (linux or win) and x86_64]
     - libtorch {{ pytorch_ver }}=cpu_openblas*                                             # [gpu_variant != "cuda" and not ((linux or win) and x86_64)]
     - libtorch {{ pytorch_ver }}=gpu_cuda{{ cuda_compiler_version | replace('.', '') }}*   # [gpu_variant == "cuda"]
+    # Header-only; replaces the copy bundled in the sdist (see build.sh / bld.bat).
+    # 4.3.x = the minor upstream 0.0.35 bundles (third_party/cutlass is 4.3.0).
+    - cutlass 4.3.6                                # [gpu_variant == "cuda"]
     # CUDA development headers and libraries (linking only; runtime comes via pytorch).
     - cuda-version =={{ cuda_compiler_version }}   # [gpu_variant == "cuda"]
     - cuda-cudart-dev                              # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # pinned by cuda-version
@@ -116,6 +115,10 @@ test:
   commands:
     - pip check
     - python -m xformers.info
+    # `import xformers` only logs a warning when _C fails to load (xformers/_cpp_lib.py); fail instead.
+    - python -c "from xformers import _cpp_lib as c; assert c._cpp_library_load_exception is None, c._cpp_library_load_exception; assert c._build_metadata is not None"
+    # Run xformers' own CUDA kernel on the test GPU (upstream tests/test_sparsity24.py::test_sparse24_largest_mask_2d).
+    - python -c "import torch, xformers; x = torch.tensor([[4, 3, 2, 1], [0, 0, 0.5, 0.5], [1, 2, 3, 4], [10, 2, -1, 5]], device='cuda', dtype=torch.float16); assert torch.ops.xformers.sparse24_largest_mask_2d(x).int().tolist() == [[1, 1, 0, 0], [0, 1, 1, 0], [0, 0, 1, 1], [1, 0, 0, 1]]"  # [gpu_variant == "cuda"]
 
 about:
   home: https://github.com/facebookresearch/xformers
