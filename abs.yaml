@@ -1,4 +1,7 @@
-# CUDA variant compiles 10 GPU architectures (5.0;6.0;6.1;7.0;7.5;8.0;8.6;8.9;9.0;10.0+PTX)
-# against pytorch 2.7.0 gpu_cuda128 — needs an extended timeout to avoid being killed
-# at the default PBP build timeout. 12 hours matches the onnxruntime CUDA build budget.
-task_timeout: 43200  # 12 hours
+# The slowest build on the previous head (aa3d795) took 15 min (win-64 CUDA). 4 hours
+# leaves room for the new linux-aarch64 CUDA builds and slow workers.
+task_timeout: 14400  # 4 hours
+
+# Opt into the aggregate CBC's py3.15 entries (python/numpy zip).
+build_env_vars:
+  ANACONDA_ROCKET_ENABLE_PY315: yes
