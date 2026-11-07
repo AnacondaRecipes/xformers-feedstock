@@ -16,8 +16,8 @@ exit 1
 REM nvcc lives in the build env, not the host env.
 set "CUDA_HOME=%BUILD_PREFIX%\Library"
 set "CUDA_PATH=%BUILD_PREFIX%\Library"
-REM pytorch 2.15 win-64 is built for exactly this list for CUDA 12.9 and 13.x
-REM - pytorch-feedstock bld.bat - so kernels for any other arch could never load.
+REM pytorch 2.15's own win-64 list for CUDA 12.9 and 13.x (pytorch-feedstock bld.bat).
+REM Plain 9.0 suffices here: the sm_90a-only sparse24 FP8 GEMM is Linux-only (#ifndef _WIN32).
 set "cuda_major=%cuda_compiler_version:~0,2%"
 if "%cuda_major%"=="12" goto :archlist
 if "%cuda_major%"=="13" goto :archlist

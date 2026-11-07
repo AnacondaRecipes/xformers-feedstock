@@ -25,10 +25,10 @@ build:
   # anaconda-linter cannot parse a jinja-computed `number:`.
   number: 4    # [gpu_variant != "cuda"]
   number: 104  # [gpu_variant == "cuda"]
-  # CUDA variants: linux-64 and win-64. CPU variant: all platforms (win-arm64 via the
-  # aggregate CBC's py3.12+ matrix, matching pytorch 2.15's win-arm64 builds).
-  # py311-py315: pytorch 2.15 on pkgs/main has no py3.10 (upstream itself allows >=3.9).
-  skip: true  # [py<311 or (gpu_variant == "cuda" and not x86_64)]
+  # CUDA variants: linux-64, win-64 and linux-aarch64 (13.0 only, as for pytorch 2.15).
+  # CPU variant: all platforms. Python versions come from the aggregate CBC (3.11+;
+  # 3.12+ on win-arm64), which matches pytorch 2.15 on pkgs/main.
+  skip: true  # [gpu_variant == "cuda" and not (linux or (win and x86_64))]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                         # [gpu_variant != "cuda"]
   # Pass the variant keys into the build env so build.sh can branch on
@@ -60,16 +60,10 @@ requirements:
   host:
     - python
     - pip
-    - setuptools
+    - setuptools >=64                              # upstream pyproject.toml build-system floor
     - wheel
-    # xformers 0.0.35 install_requires `torch>=2.10`; we pin to pytorch {{ pytorch_ver }} so
-    # the linked CUDA runtime matches across host/run. pytorch {{ pytorch_ver }} on pkgs/main
-    # ships cpu_openblas/cpu_mkl and gpu_cuda129/gpu_cuda130. Per Eric Lundby's
-    # review tips on AnacondaRecipes/vllm-feedstock#3, pin libtorch host-only with
-    # the BLAS/CUDA sub-variant to avoid overlinking.
-    # CPU BLAS: cpu_mkl is x86_64-only (MKL doesn't ship for ARM); use cpu_openblas
-    # elsewhere. Matches torchao so downstreams (unsloth) needing both resolve a single
-    # pytorch CPU build. See review-pr GUIDELINES Common Issues #32.
+    # Same pytorch build variant in host and run (libtorch host-only, to avoid overlinking).
+    # cpu_mkl on x86_64, cpu_openblas elsewhere (as torchao, so unsloth solves one pytorch).
     - pytorch {{ pytorch_ver }}=cpu_mkl*                                                   # [gpu_variant != "cuda" and (linux or win) and x86_64]
     - pytorch {{ pytorch_ver }}=cpu_openblas*                                              # [gpu_variant != "cuda" and not ((linux or win) and x86_64)]
     - pytorch {{ pytorch_ver }}=gpu_cuda{{ cuda_compiler_version | replace('.', '') }}*    # [gpu_variant == "cuda"]
@@ -106,6 +100,13 @@ requirements:
     - __cuda                                       # [gpu_variant == "cuda"]
     # libtorch intentionally omitted from run — pytorch's run_exports pull it in
     # with the correct ABI bound. Listing it here would cause overlinking.
+  run_constrained:
+    # Optional deps, checked at runtime:
+    # - flash-attn: xformers/ops/fmha/flash.py raises ImportError (breaking
+    #   `import xformers.ops`) outside 2.7.1 to 2.8.4 inclusive.
+    # - scipy: xformers/checkpoint.py needs 1.9.0+ for get_optimal_checkpoint_policy.
+    - flash-attn >=2.7.1,<=2.8.4
+    - scipy >=1.9.0
 
 test:
   requires:
@@ -119,7 +120,8 @@ test:
     # `import xformers` only logs a warning when _C fails to load (xformers/_cpp_lib.py); fail instead.
     - python -c "from xformers import _cpp_lib as c; assert c._cpp_library_load_exception is None, c._cpp_library_load_exception; assert c._build_metadata is not None"
     # Run xformers' own CUDA kernel on the test GPU (upstream tests/test_sparsity24.py::test_sparse24_largest_mask_2d).
-    - python -c "import torch, xformers; x = torch.tensor([[4, 3, 2, 1], [0, 0, 0.5, 0.5], [1, 2, 3, 4], [10, 2, -1, 5]], device='cuda', dtype=torch.float16); assert torch.ops.xformers.sparse24_largest_mask_2d(x).int().tolist() == [[1, 1, 0, 0], [0, 1, 1, 0], [0, 0, 1, 1], [1, 0, 0, 1]]"  # [gpu_variant == "cuda"]
+    # x86_64 only: the PBP linux-aarch64 GPU is a T4G (sm_75), below the aarch64 arch floor (8.0).
+    - python -c "import torch, xformers; x = torch.tensor([[4, 3, 2, 1], [0, 0, 0.5, 0.5], [1, 2, 3, 4], [10, 2, -1, 5]], device='cuda', dtype=torch.float16); assert torch.ops.xformers.sparse24_largest_mask_2d(x).int().tolist() == [[1, 1, 0, 0], [0, 1, 1, 0], [0, 0, 1, 1], [1, 0, 0, 1]]"  # [gpu_variant == "cuda" and x86_64]
 
 about:
   home: https://github.com/facebookresearch/xformers

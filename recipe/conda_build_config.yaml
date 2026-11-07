@@ -1,27 +1,26 @@
-# pytorch 2.15.0 on pkgs/main ships gpu_cuda129 and gpu_cuda130 builds. xformers
-# links against pytorch/libtorch and must use the same CUDA runtime, so we build
-# one CUDA variant per pytorch CUDA flavor (12.9 and 13.0), overriding the
-# aggregate CBC default. CUDA variants are built on linux-64 and win-64 (upstream
-# publishes CUDA wheels for both). The CPU variant also builds on linux-aarch64
-# and osx-arm64.
+# pytorch 2.15.0 on pkgs/main ships gpu_cuda129 and gpu_cuda130 builds on linux-64
+# and win-64, and gpu_cuda130 only on linux-aarch64. xformers links against
+# pytorch/libtorch and must use the same CUDA runtime, so we build one CUDA variant
+# per pytorch CUDA flavor, overriding the aggregate CBC default. The CPU variant
+# builds on every platform.
 #
-# The `none` default is deliberately UN-gated: the aggregate root CBC sets
-# cuda_compiler_version on `[linux or (win and x86_64)]` (which includes
-# linux-aarch64), and per-key REPLACEMENT semantics mean our list must cover
-# every platform or root's [12.9, 13.0] leaks through un-zipped on aarch64 and
-# produces duplicate CPU builds. Keeping `none` un-gated collapses aarch64/osx
-# to a single CPU variant. cuda_compiler is inherited from the root CBC.
+# The `none` default is deliberately UN-gated: per-key REPLACEMENT semantics mean
+# our lists must cover every platform, or the root CBC's cuda_compiler_version
+# entries leak through un-zipped (root also sets 13.4 on win-arm64, which pytorch
+# 2.15 ships but PBP cannot build or test). Keeping `none` un-gated collapses
+# osx-arm64 and win-arm64 to a single CPU variant. cuda_compiler is inherited
+# from the root CBC.
 gpu_variant:
   - none
   - cuda                       # [(linux or win) and x86_64]
-  - cuda                       # [(linux or win) and x86_64]
+  - cuda                       # [linux or (win and x86_64)]
 
 cuda_compiler_version:
   - none
   - 12.9                       # [(linux or win) and x86_64]
-  - 13.0                       # [(linux or win) and x86_64]
+  - 13.0                       # [linux or (win and x86_64)]
 
-zip_keys:                      # [(linux or win) and x86_64]
-  -                            # [(linux or win) and x86_64]
-    - gpu_variant              # [(linux or win) and x86_64]
-    - cuda_compiler_version    # [(linux or win) and x86_64]
+zip_keys:                      # [linux or (win and x86_64)]
+  -                            # [linux or (win and x86_64)]
+    - gpu_variant              # [linux or (win and x86_64)]
+    - cuda_compiler_version    # [linux or (win and x86_64)]
